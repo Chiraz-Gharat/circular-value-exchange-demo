@@ -1,0 +1,138 @@
+export type Offer = {
+  offerId: string;
+  status: string;
+  supplier: string;
+  sector: string;
+  region: string;
+  materialClass: string;
+  material: string;
+  form: string;
+  purity: number;
+  quantity: number;
+  unit: string;
+  qualityScore: number;
+  availability: string;
+  certificate: string;
+  transportOk: boolean;
+  regulationOk: boolean;
+  referencePrice: number;
+  offerPrice: number;
+  evidence: string;
+  note: string;
+};
+
+export type Demand = {
+  demandId: string;
+  status: string;
+  buyer: string;
+  sector: string;
+  region: string;
+  materialClass: string;
+  material: string;
+  minPurity: number;
+  quantity: number;
+  unit: string;
+  certificate: string;
+  targetPrice: number;
+  revenue: number;
+  contractProbability: number;
+  maxDistance: number;
+  note: string;
+};
+
+export type Processor = {
+  reliabilityCategory?: string | null;
+  supportedMaterials: string[];
+  capacityT: number;
+  processorId: string;
+  name: string;
+  region: string;
+  materialClass: string;
+  focus: string;
+  processCost: number;
+  resourceEfficiency: number;
+  reliability: number;
+  certificates: string;
+};
+
+export type Chain = {
+  inputIssues: string[];
+  profit: number;
+  modelVersion: string;
+  routeSource: string;
+  chainId: string;
+  offerId: string;
+  demandId: string;
+  processorId: string;
+  supplier: string;
+  processor: string;
+  buyer: string;
+  supplierSector: string;
+  buyerSector: string;
+  materialClass: string;
+  material: string;
+  requiredMaterial: string;
+  form: string;
+  regionPath: string;
+  exactMaterial: boolean;
+  classMatch: boolean;
+  purityOk: boolean;
+  certificateOk: boolean;
+  distanceOk: boolean;
+  transportOk: boolean;
+  regulationOk: boolean;
+  availableQuantity: number;
+  requiredQuantity: number;
+  matchedQuantity: number;
+  unit: string;
+  purity: number;
+  minPurity: number;
+  qualityScore: number;
+  availability: string;
+  distanceKm: number;
+  co2Kg: number;
+  resourceEfficiency: number;
+  processCost: number;
+  transportCost: number;
+  revenue: number;
+  referencePrice: number;
+  offerPrice: number;
+  targetPrice: number;
+  partnerReliability: number | null;
+  contractProbability: number;
+  evidence: string;
+  stage: string;
+  matchType: string;
+};
+
+export type ScoredChain = Chain & {
+  indicators: Record<string, number | null>;
+  unresolvedReasons: string[];
+  rank: string;
+  status: string;
+  confidence: string;
+  totalScore: number | null;
+  economics: number | null;
+  ecology: number | null;
+  feasibility: number | null;
+  deal: number | null;
+  quantityFit: number | null;
+  priceScore: number | null;
+  distanceScore: number | null;
+  reasons: string[];
+  exclusionReasons: string[];
+  auditTrail: string[];
+  decision: string;
+};
+
+export type RejectedPair = {
+  offerId: string;
+  demandId: string;
+  offerMaterial: string;
+  demandMaterial: string;
+  offerClass: string;
+  demandClass: string;
+  reason: string;
+};
+
+export type ScoreWeights = { economics: number; ecology: number; feasibility: number; deal: number; };

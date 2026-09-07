@@ -1,0 +1,92 @@
+[
+  {
+    "from": "Baden-Württemberg",
+    "to": "Baden-Württemberg",
+    "distanceKm": 45,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Baden-Württemberg",
+    "to": "Sachsen",
+    "distanceKm": 175,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Baden-Württemberg",
+    "to": "Bayern",
+    "distanceKm": 230,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Baden-Württemberg",
+    "to": "Nordrhein-Westfalen",
+    "distanceKm": 285,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Baden-Württemberg",
+    "to": "Niedersachsen",
+    "distanceKm": 340,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Sachsen",
+    "to": "Sachsen",
+    "distanceKm": 45,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Sachsen",
+    "to": "Bayern",
+    "distanceKm": 230,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Sachsen",
+    "to": "Nordrhein-Westfalen",
+    "distanceKm": 285,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Sachsen",
+    "to": "Niedersachsen",
+    "distanceKm": 340,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Bayern",
+    "to": "Bayern",
+    "distanceKm": 45,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Bayern",
+    "to": "Nordrhein-Westfalen",
+    "distanceKm": 285,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Bayern",
+    "to": "Niedersachsen",
+    "distanceKm": 340,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Nordrhein-Westfalen",
+    "to": "Nordrhein-Westfalen",
+    "distanceKm": 45,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Nordrhein-Westfalen",
+    "to": "Niedersachsen",
+    "distanceKm": 340,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  },
+  {
+    "from": "Niedersachsen",
+    "to": "Niedersachsen",
+    "distanceKm": 45,
+    "source": "Synthetische Szenarioannahme, keine gemessene Fahrstrecke"
+  }
+]

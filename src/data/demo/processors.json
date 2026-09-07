@@ -1,0 +1,94 @@
+[
+  {
+    "processorId": "P001",
+    "name": "Recytec Süd",
+    "region": "Baden-Württemberg",
+    "materialClass": "Kunststoff",
+    "focus": "Sortierung und Regranulierung",
+    "processCost": 180,
+    "resourceEfficiency": 86,
+    "reliability": 85,
+    "certificates": "ISO14001",
+    "supportedMaterials": [
+      "PP"
+    ],
+    "capacityT": 2000
+  },
+  {
+    "processorId": "P002",
+    "name": "Sortglas Mitte",
+    "region": "Sachsen",
+    "materialClass": "Glas",
+    "focus": "Glasbruchsortierung",
+    "processCost": 140,
+    "resourceEfficiency": 91,
+    "reliability": 82,
+    "certificates": "ISO14001",
+    "supportedMaterials": [
+      "Altglas"
+    ],
+    "capacityT": 2000
+  },
+  {
+    "processorId": "P003",
+    "name": "BioExtract Labs",
+    "region": "Baden-Württemberg",
+    "materialClass": "Biomasse",
+    "focus": "Faser- und Inhaltsstoffextraktion",
+    "processCost": 190,
+    "resourceEfficiency": 93,
+    "reliability": 81,
+    "certificates": "ISO14001",
+    "supportedMaterials": [
+      "Hanfaser",
+      "Stärkeschlamm"
+    ],
+    "capacityT": 2000
+  },
+  {
+    "processorId": "P004",
+    "name": "Fermenta Circular",
+    "region": "Bayern",
+    "materialClass": "Biomasse",
+    "focus": "Fermentation",
+    "processCost": 260,
+    "resourceEfficiency": 90,
+    "reliability": 77,
+    "certificates": "ISCC",
+    "supportedMaterials": [
+      "Hanfaser",
+      "Stärkeschlamm"
+    ],
+    "capacityT": 2000
+  },
+  {
+    "processorId": "P005",
+    "name": "Metallkreislauf Rhein",
+    "region": "Nordrhein-Westfalen",
+    "materialClass": "Metall",
+    "focus": "Schmelzen und Legieren",
+    "processCost": 300,
+    "resourceEfficiency": 78,
+    "reliability": 90,
+    "certificates": "ISO9001",
+    "supportedMaterials": [
+      "Aluminium"
+    ],
+    "capacityT": 2000
+  },
+  {
+    "processorId": "P006",
+    "name": "Sortex Circular",
+    "region": "Niedersachsen",
+    "materialClass": "Textil",
+    "focus": "Textilsortierung und Faseraufbereitung",
+    "processCost": 160,
+    "resourceEfficiency": 95,
+    "reliability": 80,
+    "certificates": "OEKO-TEX",
+    "supportedMaterials": [
+      "Baumwolle"
+    ],
+    "capacityT": 2000
+  }
+]
