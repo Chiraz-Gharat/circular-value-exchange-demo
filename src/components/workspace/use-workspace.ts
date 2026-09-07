@@ -173,7 +173,7 @@ export function useWorkspace() {
     go("chains");
   }
 
-  
+
   return { page, offers, setOffers, demands, setDemands, processors, setProcessors, model, setModel, provenance, setProvenance, cmrsRecords, setCmrsRecords, cmrsText, setCmrsText, scoreWeights, setScoreWeights, query, setQuery, setSelectedChainId, message, setMessage, chains, discardedPairs, scoredChains, selectedChain, exactChains, rankedChains, excludedChains, cmrsIssueCount, confidenceStats, filteredOffers, filteredDemands, go, submitCmrsText, transferCmrsRecord, submitOffer, submitDemand };
 }
 export type WorkspaceState = ReturnType<typeof useWorkspace>;

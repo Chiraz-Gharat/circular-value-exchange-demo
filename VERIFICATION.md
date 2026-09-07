@@ -47,7 +47,7 @@ Die erste Linux-CI-Prüfung erkannte eine überlagerte Navigationsschaltfläche.
 - src/domain/cmrs/location.ts enthält keinen regions[0]-Fallback; fehlende Orte bleiben leer und erzeugen einen Validierungsfehler.
 - detectCmrsRecordType endet mit unknown; offer entsteht nur durch explizite Regeln. Widersprüchliche Signale führen ebenfalls zu unknown.
 - Processor.reliability ist als reliability?: number deklariert. Die Prozent-Pflichtwerte für Processor enthalten ausschließlich resourceEfficiency. Ein Datensatz ohne alle Legacy-reliability-Werte wird akzeptiert und liefert dieselben FR7-Ergebnisse.
-- Workspace-Hauptkomponente: 76 Zeilen; context.ts: 17 Zeilen.
+- Workspace-Hauptkomponente: 76 Zeilen; context.ts: 18 Zeilen.
 - Zusätzlich zu den bisherigen Browserfällen werden Unknown/gesperrte automatische Übernahme sowie fehlender Ort ohne Ersatzregion auf beiden Viewports geprüft. Der vollständige Browser-Rechenlauf verwendet Partner ohne Legacy-reliability.
 
 Alle Nachweise sind durch tests/hardening.test.mjs, Typecheck und den Browserakzeptanztest abgesichert. Die unveränderten fachlichen offenen Punkte bleiben bestehen.

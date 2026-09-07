@@ -78,6 +78,6 @@ Die tatsächlichen Prüfergebnisse werden in `VERIFICATION.md` festgehalten. Ein
 | Unklarer Typ | pauschal offer | unknown bei fehlendem oder widersprüchlichem Signal; E101 und manuelle Prüfung | src/domain/cmrs/record-type.ts; validation.ts | keine unbelegte Klassifikation |
 | Partner-Altwert | reliability als Pflichtfeld | optionales Legacy-Feld, nicht Pflichtbestandteil der Validierung | src/types/model.ts; src/domain/validation/dataset.ts | reliabilityCategory bleibt Scoringkategorie |
 | Workspace | 1300 Zeilen in einer Datei | 76 Zeilen Hauptkomponente; Controller, Ansichten, Karten und Formulare separat | src/components/workspace/ | rein strukturelle Aufteilung ohne Layoutänderung |
-| CMRS-Kontext | 469 Zeilen Sammelmodul | 17 Zeilen Exportfassade; Parser und Erkennungs-/Validierungsfunktionen separat | src/domain/context.ts; src/domain/cmrs/; src/types/cmrs.ts | kleine Module mit unveränderten bestehenden Funktionskörpern außer den verlangten Korrekturen |
+| CMRS-Kontext | 469 Zeilen Sammelmodul | 18 Zeilen Exportfassade; Parser und Erkennungs-/Validierungsfunktionen separat | src/domain/context.ts; src/domain/cmrs/; src/types/cmrs.ts | kleine Module mit unveränderten bestehenden Funktionskörpern außer den verlangten Korrekturen |
 
 Der Scoring-, Matching- und Styles-Quelltext bleibt gegenüber Commit 6312fe0794f80da48108d2bf5b8be712d9f2cd46 unverändert. Die bestehende fachliche Bewertung wird nicht erweitert oder neu kalibriert.
