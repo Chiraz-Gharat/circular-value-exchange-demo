@@ -66,3 +66,5 @@ Die tatsächlichen Prüfergebnisse werden in `VERIFICATION.md` festgehalten. Ein
 | Ausschluss lokaler Dateien | unvollständige Schutzliste | Builds, Caches, Umgebungsdateien, Schlüssel, IDE-Dateien und Archive ignoriert | .gitignore | keine lokalen Laufzeitdaten veröffentlichen |
 
 | Sicherheitsprüfung | npm ci meldete sieben Auditbefunde | Vite 8.2.2 und kompatible transitive Sicherheitsupdates | package.json; package-lock.json | vom npm-Audit identifizierte bekannte Lücken beseitigt; keine erzwungenen Hauptversionswechsel |
+
+| Browserplattformen | Statusanzeige konnte unter Linux die Navigation überdecken | Status und Navigation in getrennten Grid-Zeilen; Navigation bricht bei Platzmangel um | src/styles.css | tatsächlichen Klickkonflikt beseitigt, keine erzwungenen Testklicks |

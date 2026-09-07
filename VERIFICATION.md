@@ -38,3 +38,5 @@ Nicht Bestandteil dieser Prüfung: vollständige Sicherheits- oder Barrierefreih
 ## Abhängigkeiten
 
 Der initiale Audit meldete sieben bekannte Befunde. Vite wurde innerhalb der Hauptversion 8 auf 8.2.2 aktualisiert; die übrigen betroffenen transitiven Pakete wurden kompatibel aktualisiert. Der abschließende npm-Audit meldet null bekannte Sicherheitslücken. Das ist eine zeitpunktbezogene Datenbankprüfung, keine Garantie für vollständige Sicherheit.
+
+Die erste Linux-CI-Prüfung erkannte eine überlagerte Navigationsschaltfläche. Statusanzeige und Navigation wurden in separate Layoutzeilen getrennt. Die Abnahme verwendet weiterhin echte sichtbare Klicks ohne force-Option und prüft dadurch die Bedienbarkeit auf der CI-Plattform.
