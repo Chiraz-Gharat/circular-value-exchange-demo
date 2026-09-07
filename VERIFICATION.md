@@ -5,12 +5,12 @@ Stand: 7. September 2026. Lokal geprüft mit Node.js 24.15.0.
 | Prüfung | Lokales Ergebnis |
 |---|---|
 | npm ci | erfolgreich; Installation aus dem Lockfile |
-| npm test | 70 bestanden, 0 fehlgeschlagen, 0 übersprungen |
+| npm test | 90 bestanden, 0 fehlgeschlagen, 0 übersprungen |
 | npm run typecheck | erfolgreich, TypeScript strict |
 | npm run lint | erfolgreich; no-console und no-eval aktiviert |
 | npm run build | erfolgreich; statische HTML-, JavaScript- und CSS-Dateien |
 | APP_BASE_PATH=/circular-value-exchange-demo/ npm run build | erfolgreich mit Repositorypräfix |
-| Browserakzeptanz | 24 Prüfungen bestanden, Desktop 1440 px und Mobil 390 px |
+| Browserakzeptanz | 28 Prüfungen bestanden, Desktop 1440 px und Mobil 390 px |
 | Konsole und Ressourcen | keine Console Errors, keine JavaScript-Ausnahmen und keine HTTP-Fehler im Akzeptanzlauf |
 
 ## Browserabnahme
@@ -21,7 +21,7 @@ Der browserseitige JSON-Ergebnisexport wurde mit dem unabhängig ausgeführten T
 
 ## Veröffentlichungsnachweis
 
-Der Workflow `.github/workflows/pages.yml` wiederholt Installation, Unit-Tests, Typprüfung, Lint, Build und die 24 Browserprüfungen. Nur nach erfolgreichem Prüflauf wird `dist/` als Pages-Artefakt veröffentlicht. Der anschließende Job `verify-live` führt denselben Akzeptanztest gegen die tatsächlich veröffentlichte URL aus. Sein Ergebnis, der Deploymentstatus und der zugehörige Commit sind in den [GitHub-Actions-Läufen](https://github.com/Chiraz-Gharat/circular-value-exchange-demo/actions) dauerhaft dem geprüften Quellstand zugeordnet. Diese laufabhängigen Ergebnisse werden nicht durch einen statischen Text vorweggenommen.
+Der Workflow `.github/workflows/pages.yml` wiederholt Installation, Unit-Tests, Typprüfung, Lint, Build und die 28 Browserprüfungen. Nur nach erfolgreichem Prüflauf wird `dist/` als Pages-Artefakt veröffentlicht. Der anschließende Job `verify-live` führt denselben Akzeptanztest gegen die tatsächlich veröffentlichte URL aus. Sein Ergebnis, der Deploymentstatus und der zugehörige Commit sind in den [GitHub-Actions-Läufen](https://github.com/Chiraz-Gharat/circular-value-exchange-demo/actions) dauerhaft dem geprüften Quellstand zugeordnet. Diese laufabhängigen Ergebnisse werden nicht durch einen statischen Text vorweggenommen.
 
 Repository: https://github.com/Chiraz-Gharat/circular-value-exchange-demo
 
@@ -40,3 +40,14 @@ Nicht Bestandteil dieser Prüfung: vollständige Sicherheits- oder Barrierefreih
 Der initiale Audit meldete sieben bekannte Befunde. Vite wurde innerhalb der Hauptversion 8 auf 8.2.2 aktualisiert; die übrigen betroffenen transitiven Pakete wurden kompatibel aktualisiert. Der abschließende npm-Audit meldet null bekannte Sicherheitslücken. Das ist eine zeitpunktbezogene Datenbankprüfung, keine Garantie für vollständige Sicherheit.
 
 Die erste Linux-CI-Prüfung erkannte eine überlagerte Navigationsschaltfläche. Statusanzeige und Navigation wurden in separate Layoutzeilen getrennt. Die Abnahme verwendet weiterhin echte sichtbare Klicks ohne force-Option und prüft dadurch die Bedienbarkeit auf der CI-Plattform.
+
+## Hardening-Nachweise
+
+- Testlaufzeit: node --import tsx, keine Abhängigkeit von nativer TypeScript-Ausführung. Der CI-Prüfjob läuft unter Node 22.16.0 und 24.15.0.
+- src/domain/cmrs/location.ts enthält keinen regions[0]-Fallback; fehlende Orte bleiben leer und erzeugen einen Validierungsfehler.
+- detectCmrsRecordType endet mit unknown; offer entsteht nur durch explizite Regeln. Widersprüchliche Signale führen ebenfalls zu unknown.
+- Processor.reliability ist als reliability?: number deklariert. Die Prozent-Pflichtwerte für Processor enthalten ausschließlich resourceEfficiency. Ein Datensatz ohne alle Legacy-reliability-Werte wird akzeptiert und liefert dieselben FR7-Ergebnisse.
+- Workspace-Hauptkomponente: 76 Zeilen; context.ts: 17 Zeilen.
+- Zusätzlich zu den bisherigen Browserfällen werden Unknown/gesperrte automatische Übernahme sowie fehlender Ort ohne Ersatzregion auf beiden Viewports geprüft. Der vollständige Browser-Rechenlauf verwendet Partner ohne Legacy-reliability.
+
+Alle Nachweise sind durch tests/hardening.test.mjs, Typecheck und den Browserakzeptanztest abgesichert. Die unveränderten fachlichen offenen Punkte bleiben bestehen.

@@ -9,7 +9,7 @@ export function rowIssues(row: Offer | Demand | Processor, kind: 'offer'|'demand
   const errors: string[] = [];
   const required = kind === 'offer' ? ['offerId','status','supplier','sector','region','materialClass','material','form','unit','availability','evidence','note'] : kind === 'demand' ? ['demandId','status','buyer','sector','region','materialClass','material','unit','note'] : ['processorId','name','region','materialClass','focus'];
   for(const k of required) if(typeof r[k] !== 'string' || !(r[k] as string).trim()) errors.push(`${k}: Angabe fehlt.`);
-  const percentages = kind === 'offer' ? ['purity','qualityScore'] : kind === 'demand' ? ['minPurity','contractProbability'] : ['resourceEfficiency','reliability'];
+  const percentages = kind === 'offer' ? ['purity','qualityScore'] : kind === 'demand' ? ['minPurity','contractProbability'] : ['resourceEfficiency'];
   for(const k of percentages) if(!percentage(r[k])) errors.push(`${k}: Wert muss zwischen 0 und 100 liegen.`);
   const numbers = kind === 'offer' ? ['offerPrice','referencePrice'] : kind === 'demand' ? ['targetPrice','revenue','maxDistance'] : ['processCost','capacityT'];
   for(const k of numbers) if(!nonnegative(r[k])) errors.push(`${k}: Endlicher nicht negativer Wert erforderlich.`);

@@ -46,13 +46,17 @@ index.html                   Statischer HTML-Einstieg
 src/main.tsx                 React-Mount
 src/styles.css               Anwendungsstile
 .github/workflows/pages.yml  Prüfung und Veröffentlichung
-src/components/              React-Oberfläche und JSON-Registereditor
+src/components/workspace.tsx  Schlanke Hauptkomponente
+src/components/workspace/     Controller, Ansichten und wiederverwendete Elemente
+src/components/              JSON-Registereditor
 src/config/                  Gewichte, Skalen, Einheiten, Schlüssel, Vokabulare
 src/data/demo/               synthetische Register, Routen und CMRS-Beispiele
 src/domain/matching/         Kandidatenbildung und Ausschlussprotokoll
 src/domain/scoring/          Indikatoren, Aggregation und Ranking
 src/domain/validation/       Eingabe- und Modellvalidierung
-src/domain/context.ts        bestehende CMRS-Demonstration und Darstellungshilfen
+src/domain/context.ts        Rückwärtskompatible Exportfassade
+src/domain/cmrs/             Parser, Typ-/Orts-/Materialerkennung, Menge, Validierung, Vertrauen
+src/types/cmrs.ts            CMRS-Datenvertrag
 src/storage/                 fehlertolerantes Lesen des Browserspeichers
 src/types/                   Datenverträge
 tests/                       fachliche Unit- und Regressionstests
@@ -66,7 +70,7 @@ React 19.2.6, TypeScript 5.9.3 im Strict-Modus und Vite 8.2.2. Die Anwendung lä
 
 ## Installation
 
-Voraussetzung: Node.js ab 22.18.0 und npm. Geprüft wurde mit Node.js 24.15.0. Im entpackten Projektverzeichnis:
+Voraussetzung: Node.js ab 22.12.0 und npm. Geprüft wurde mit Node.js 24.15.0. Im entpackten Projektverzeichnis:
 
 ```sh
 npm ci
@@ -119,7 +123,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Tests verwenden den nativen Node-Test-Runner und importieren den TypeScript-Rechenkern direkt. Testdaten mit vollständig gesetzten Reinheitsgrenzen sind ausschließlich Rechenfixtures, keine produktiven Kalibrierungen. Die Tests prüfen Formeln, Skalen, Grenzen, Ausschlüsse, Normalisierung, Sortierung, fehlerhafte Eingaben und Nichtmutation. Ein bestandener Test belegt Implementierungskonsistenz, nicht die Validität der Daten oder die Eignung für reale Entscheidungen.
+Tests verwenden `node --import tsx --test tests/*.test.mjs`. Der explizite tsx-Loader transpiliert TypeScript auch unter Node 22.16.0; native TypeScript-Unterstützung eines bestimmten Node-Minor-Releases wird nicht vorausgesetzt. Der Browsertest verwendet denselben Loader. Der CI-Workflow prüft den vollständigen Ablauf unter Node 22.16.0 und 24.15.0. Testdaten mit vollständig gesetzten Reinheitsgrenzen sind ausschließlich Rechenfixtures, keine produktiven Kalibrierungen. Die Tests prüfen Formeln, Skalen, Grenzen, Ausschlüsse, Normalisierung, Sortierung, fehlerhafte Eingaben und Nichtmutation. Ein bestandener Test belegt Implementierungskonsistenz, nicht die Validität der Daten oder die Eignung für reale Entscheidungen.
 
 ## Datenmodell
 
@@ -129,7 +133,7 @@ Mengen werden aus g, kg oder t in Tonnen umgerechnet. Sämtliche Preise, Erlöse
 
 Für jede Kombination entsteht eine Kandidatenkette mit stabiler ID. Angebot, Prozesspartner und Gesuch werden separat referenziert. Die Routenlänge ist die Summe beider Transportabschnitte. Registrierte Routen werden symmetrisch verwendet; fehlende Strecken werden nicht geschätzt. Ein intern verwendeter Null-Platzhalter für eine fehlende Route kann deshalb niemals als tatsächlich kostenlose oder emissionsfreie bewertbare Kette eingehen.
 
-Der Gesamtdeckungsbeitrag ist `Erlös - Materialeinkauf - Prozesskosten - Transportkosten`. Das Modell unterstellt gleiche verarbeitete und verkaufte Masse, keine Ausbeuteverluste und keine Fixkosten. `targetPrice` bleibt Registerinformation, ist aber keine verdeckte zusätzliche Preisformel. Numerische historische `reliability`-Werte bleiben zur Nachvollziehbarkeit erhalten, werden jedoch nicht gescort. Dafür ist eine dokumentierte `reliabilityCategory` erforderlich.
+Der Gesamtdeckungsbeitrag ist `Erlös - Materialeinkauf - Prozesskosten - Transportkosten`. Das Modell unterstellt gleiche verarbeitete und verkaufte Masse, keine Ausbeuteverluste und keine Fixkosten. `targetPrice` bleibt Registerinformation, ist aber keine verdeckte zusätzliche Preisformel. Numerische historische `reliability`-Werte bleiben als optionales Legacy-Feld zur Nachvollziehbarkeit erhalten, werden jedoch weder als Pflichtwert validiert noch gescort. Dafür ist eine dokumentierte `reliabilityCategory` erforderlich.
 
 ## Hard Constraints
 
@@ -203,3 +207,9 @@ Die RQ1-Regelerkennung ist sprachlich begrenzt und ihre Datenvertrauensheuristik
 Für einen Lauf gemeinsam sichern: exportiertes Register, Modellversion, vollständige Modellkonfiguration, FR7-Gewichte, Ergebnisexport und Lockfile. Im Prüflog stehen Vergleichsmenge, Teilindikatoren, Routenquellen und verwendete Proxys. Die Ergebnisse sind für identische Eingaben deterministisch; lediglich Exportzeitstempel ändern sich. Alte Browserdaten werden wegen der neuen Schema- und Speicherkennungen nicht stillschweigend migriert.
 
 `CHANGE_REPORT.md` dokumentiert die Änderungen und tatsächlich ausgeführten Prüfungen. Das Quellcode-ZIP enthält keine Abhängigkeiten, Builds, lokalen Caches oder Geheimnisse. Nach dem Entpacken wird ausschließlich über `npm ci` installiert. Die separat vorhandene Word-Datei ist nicht Bestandteil dieses Quellcodeprüfstands und wurde nicht wissenschaftlich nachvalidiert. Die finale Source-ZIP wird mit git archive direkt aus dem finalen Commit erstellt, damit die enthaltenen Dateien genau dem Commit entsprechen.
+
+## Begrenztes Hardening
+
+Die CMRS-Ortserkennung liefert bei fehlender Ortsinformation leere Werte für location und region. Der bestehende Validator meldet den fehlenden Standort. Die Typklassifikation erfordert ein explizites, eindeutiges Angebots- oder Gesuchssignal. Ohne Signal oder bei widersprüchlichen Signalen ist der Typ unknown. E101 verlangt dann manuelle Prüfung, verhindert eine Freigabe und die Oberfläche bezeichnet den Datensatz nicht als Angebot oder Gesuch. Bestehende explizite Erkennungsregeln bleiben erhalten.
+
+Workspace und CMRS wurden strukturell aufgeteilt; Fachgewichte, Matching, Ranking und Styles sind gegenüber dem vorherigen Pages-Stand unverändert.

@@ -42,6 +42,18 @@ try {
     await page.reload();
     await page.getByText('CMRS-004', { exact: true }).first().waitFor();
     checks.push(`${width}px: CMRS-Extraktion und Persistenz`);
+    const unknown = page.locator('.cmrs-record').filter({ hasText: 'CMRS-004' });
+    await unknown.getByText('Unbekannt – manuelle Prüfung', { exact: true }).waitFor();
+    await unknown.getByRole('button', { name: 'Manuelle Prüfung erforderlich', exact: true }).click();
+    assert.equal(new URL(page.url()).hash, '#cmrs');
+    await page.getByText('Datensatztyp unbekannt; manuelle Prüfung erforderlich.', { exact: true }).waitFor();
+    checks.push(`${width}px: Unknown sichtbar und keine automatische Registerübernahme`);
+    await page.getByRole('textbox', { name: 'Freitext aus Anzeige, E-Mail oder Formular' }).fill('Biete 500 kg PP, Reinheit 92 %.');
+    await page.getByRole('button', { name: 'CMRS-Record erzeugen', exact: true }).click();
+    const missingLocation = page.locator('.cmrs-record').filter({ hasText: 'CMRS-005' });
+    await missingLocation.getByText(/Standort oder Region fehlt/).waitFor();
+    assert.equal(await missingLocation.locator('dl div').filter({ hasText: 'Region' }).locator('dd').innerText(), '');
+    checks.push(`${width}px: Fehlender Ort ohne erfundene Region`);
 
     for (const kind of ['offer', 'search']) {
       await page.goto(base + '#' + kind);
@@ -70,7 +82,7 @@ try {
     const dataset = structuredClone(scenario);
     // Ausschließlich browserlokale Testkonfiguration, keine fachliche Kalibrierung.
     dataset.model.purityReserveThresholds = { deutlich: 10, klar: 5, knapp: 1, minimal: 0 };
-    for (const processor of dataset.processors) processor.reliabilityCategory = 'guter Partnerfit';
+    for (const processor of dataset.processors) { delete processor.reliability; processor.reliabilityCategory = 'guter Partnerfit'; }
     dataset.model.routes.forEach((route,index) => { route.distanceKm = index + 1; route.source = 'Synthetische Browser-Teststrecke'; });
     const expected = scoreChains(generateChains(dataset.offers, dataset.demands, dataset.processors, dataset.model), DEFAULT_WEIGHTS, dataset.model);
     assert.ok(expected.some(chain => chain.totalScore !== null));

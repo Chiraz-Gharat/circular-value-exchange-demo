@@ -36,7 +36,7 @@ Die Registerwerte werden vollständig und feldweise aufgeführt, einschließlich
 | Datenvertrauen RQ2 | proxy → niedrig; sonst mittel | Separates Erklärmerkmal | noch zu validieren | Unkalibrierte kategorielle Heuristik, kein Scoreanteil. |
 | CMRS_TRUST_HEURISTIC | {"maxIssues":2,"highEvidence":4,"mediumEvidence":2} | Bestehende RQ1-Demo | noch zu validieren | Unveränderte Altwerte zentralisiert; keine neue Extraktionsevaluation. |
 | Material-/Regionvokabulare | src/config/vocabularies.ts | Erkennung und Auswahl | noch zu validieren | Begrenzter Demonstrationsumfang; keine vollständige Taxonomie oder vollständige Regionalliste. |
-| Regelbasierte CMRS-Muster | src/config/vocabularies.ts und src/domain/context.ts | Freitexterkennung | noch zu validieren | Sprachliche Regeln und Warnungen ohne neu nachgewiesene Präzision/Recall. |
+| Regelbasierte CMRS-Muster | src/config/vocabularies.ts und src/domain/cmrs/ | Freitexterkennung | noch zu validieren | Sprachliche Regeln und Warnungen ohne neu nachgewiesene Präzision/Recall. |
 | Test-Reinheitsgrenzen | 10/5/1/0 Prozentpunkte | Nur Unit-Testfixtures | synthetische Demo-Annahme | Nicht in Produktivkonfiguration oder Demodatensatz; dienen nur der Rechenprüfung. |
 | Weitere Testwerte | tests/*.test.mjs | Rechenfixtures und Grenzfälle | synthetische Demo-Annahme | Keine fachliche Parametrisierung; keine übernommenen Marktwerte. |
 | CMRS-Beispiel 1 | 500 kg PP-Regranulat, Feuchte max 0,3 %, Reinheit 92 %, Standort Berlin. | RQ1-Demo-Eingabe | synthetische Demo-Annahme | Enthaltene Mengen und Qualitätswerte sind keine Messungen. |
@@ -397,3 +397,7 @@ Die Registerwerte werden vollständig und feldweise aufgeführt, einschließlich
 Die statische Bereitstellung verändert keine FR7-Gewichte, Szenariodaten oder fachlichen Schwellen. Der Browserakzeptanztest setzt ausschließlich in einem isolierten Browserkontext die vier Testgrenzen 10/5/1/0 und die Partnerkategorie „guter Partnerfit“, um einen vollständigen Rechenlauf zu prüfen. Diese Werte werden nicht in die veröffentlichte Demokonfiguration übernommen. Testeingaben werden nur im isolierten Browserspeicher gespeichert, nicht an einen Server übertragen.
 
 Der vollständige Browser-Rechentest variiert zusätzlich seine isolierten Routen auf Distanz = Registerindex + 1 km. Damit sind CO₂- und Transportkosten-Min-Max-Bereiche im Test bestimmbar. Auch diese rein technischen Testwerte sind keine fachlichen Annahmen des veröffentlichten Szenarios. Im übernommenen Standardszenario können gleich lange zulässige Routen weiterhin offene Normalisierungsergebnisse verursachen.
+
+## Missing-Data-Hardening
+
+Fehlende Ortsangaben bleiben leer; es gibt keine synthetische Ersatzregion. Unklare oder widersprüchliche Freitexte erhalten unknown und benötigen manuelle Prüfung. Die expliziten sprachlichen Regeln sind weiterhin nicht empirisch validiert. Historische reliability-Zahlen sind optional und bleiben ohne Einfluss auf FR7. Durch die Modulaufteilung werden keine weiteren fachlichen Annahmen eingeführt.

@@ -51,7 +51,8 @@ export type Processor = {
   focus: string;
   processCost: number;
   resourceEfficiency: number;
-  reliability: number;
+  /** Historischer Registerwert, kein aktiver Scoringindikator. */
+  reliability?: number;
   certificates: string;
 };
 
