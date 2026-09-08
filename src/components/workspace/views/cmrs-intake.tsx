@@ -1,8 +1,8 @@
-import { cmrsSampleTexts,integrationReviewItems } from '../../../domain/context.ts';
+import { cmrsSampleTexts } from '../../../domain/context.ts';
 import { CmrsRecordCard } from '../cmrs-record-card.tsx';
 import type { WorkspaceState } from '../use-workspace.ts';
-export function CmrsIntake({ state }: { state: Pick<WorkspaceState, 'page' | 'cmrsRecords' | 'cmrsText' | 'setCmrsText' | 'go' | 'submitCmrsText' | 'transferCmrsRecord'> }) {
-  const { page, cmrsRecords, cmrsText, setCmrsText, go, submitCmrsText, transferCmrsRecord } = state;
+export function CmrsIntake({ state }: { state: Pick<WorkspaceState, 'cmrsLoading' | 'cmrsRecords' | 'cmrsText' | 'go' | 'page' | 'setCmrsText' | 'submitCmrsText' | 'transferCmrsRecord' | 'updateCmrsRecord'> }) {
+  const { cmrsLoading, cmrsRecords, cmrsText, go, page, setCmrsText, submitCmrsText, transferCmrsRecord, updateCmrsRecord } = state;
   return (<>{page === "cmrs" && (
         <section className="page-grid">
           <div className="page-title compact">
@@ -20,47 +20,34 @@ export function CmrsIntake({ state }: { state: Pick<WorkspaceState, 'page' | 'cm
             ))}
           </div>
 
-          <div className="cmrs-layout">
-            <form className="form-panel cmrs-intake" onSubmit={submitCmrsText}>
-              <h3>Materialtext erfassen</h3>
-              <label>
-                <span>Freitext aus Anzeige, E-Mail oder Formular</span>
-                <textarea
-                  onChange={(event) => setCmrsText(event.target.value)}
-                  value={cmrsText}
-                />
-              </label>
-              <div className="example-row">
-                {cmrsSampleTexts.map((sample, index) => (
-                  <button
-                    className="secondary"
-                    key={sample}
-                    onClick={() => setCmrsText(sample)}
-                    type="button"
-                  >
-                    Beispiel {index + 1}
-                  </button>
-                ))}
-              </div>
-              <div className="form-actions">
-                <button type="submit">CMRS-Record erzeugen</button>
-                <button className="secondary" onClick={() => go("database")} type="button">Register ansehen</button>
-              </div>
-            </form>
-
-            <article className="wide-panel cmrs-method">
-              <p className="eyebrow">Integrationscheck</p>
-              <h3>Was aus RQ1 übernommen wurde.</h3>
-              <div className="integration-checks">
-                {integrationReviewItems.map(([title, body]) => (
-                  <div key={title}>
-                    <strong>{title}</strong>
-                    <span>{body}</span>
-                  </div>
-                ))}
-              </div>
-            </article>
-          </div>
+          <form className="form-panel cmrs-intake" onSubmit={submitCmrsText}>
+            <h3>Materialtext erfassen</h3>
+            <label>
+              <span>Freitext aus Anzeige, E-Mail oder Formular</span>
+              <textarea
+                onChange={(event) => setCmrsText(event.target.value)}
+                value={cmrsText}
+              />
+            </label>
+            <div className="example-row">
+              {cmrsSampleTexts.map((sample, index) => (
+                <button
+                  className="secondary"
+                  key={sample}
+                  onClick={() => setCmrsText(sample)}
+                  type="button"
+                >
+                  Beispiel {index + 1}
+                </button>
+              ))}
+            </div>
+            <div className="form-actions">
+              <button disabled={cmrsLoading} type="submit">
+                {cmrsLoading ? "Wird per KI extrahiert…" : "CMRS-Record erzeugen"}
+              </button>
+              <button className="secondary" onClick={() => go("database")} type="button">Register ansehen</button>
+            </div>
+          </form>
 
           <div className="wide-panel">
             <h3>CMRS-Record-Historie</h3>
@@ -69,6 +56,7 @@ export function CmrsIntake({ state }: { state: Pick<WorkspaceState, 'page' | 'cm
                 <CmrsRecordCard
                   key={record.recordId}
                   onTransfer={transferCmrsRecord}
+                  onUpdate={updateCmrsRecord}
                   record={record}
                 />
               ))}

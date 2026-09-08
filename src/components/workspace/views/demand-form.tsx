@@ -1,10 +1,10 @@
-import { materialClasses,regions } from '../../../domain/context.ts';
+import { regions } from '../../../domain/context.ts';
 import { MiniScore } from '../display.tsx';
-import { FormGrid,NumberField,SelectField,TextField } from '../form-controls.tsx';
+import { FormGrid,MaterialClassField,NumberField,SelectField,TextField } from '../form-controls.tsx';
 import { ListingCard } from '../listing-cards.tsx';
 import type { WorkspaceState } from '../use-workspace.ts';
-export function DemandForm({ state }: { state: Pick<WorkspaceState, 'page' | 'query' | 'setQuery' | 'filteredOffers' | 'submitDemand'> }) {
-  const { page, query, setQuery, filteredOffers, submitDemand } = state;
+export function DemandForm({ state }: { state: Pick<WorkspaceState, 'extraMaterialClasses' | 'filteredOffers' | 'page' | 'prefill' | 'prefillKey' | 'query' | 'registerMaterialClass' | 'setQuery' | 'submitDemand'> }) {
+  const { extraMaterialClasses, filteredOffers, page, prefill, prefillKey, query, registerMaterialClass, setQuery, submitDemand } = state;
   return (<>{page === "search" && (
         <section className="page-grid">
           <div className="page-title compact">
@@ -35,18 +35,18 @@ export function DemandForm({ state }: { state: Pick<WorkspaceState, 'page' | 'qu
                 ))}
               </div>
             </div>
-            <form className="form-panel tight" onSubmit={submitDemand}>
+            <form className="form-panel tight" key={prefillKey} onSubmit={submitDemand}>
               <h3>Gesuch erfassen</h3>
               <FormGrid>
                 <TextField defaultValue="" label="Unternehmen" name="buyer" />
                 <TextField defaultValue="" label="Branche" name="sector" />
-                <SelectField label="Region" name="region" options={regions} />
-                <SelectField label="Materialklasse" name="materialClass" options={materialClasses} />
-                <TextField defaultValue={query} label="Benötigtes Material" name="material" />
-                <NumberField defaultValue={undefined} label="Mindestreinheit in %" name="minPurity" />
-                <NumberField defaultValue={undefined} label="Benötigte Menge" name="quantity" />
-                <TextField defaultValue="" label="Einheit" name="unit" />
-                <TextField defaultValue="" label="Benötigtes Zertifikat" name="certificate" />
+                <SelectField defaultValue={prefill?.region ?? ""} label="Region" name="region" options={regions} />
+                <MaterialClassField defaultValue={prefill?.materialClass ?? ""} extraClasses={extraMaterialClasses} onRegisterClass={registerMaterialClass} />
+                <TextField defaultValue={prefill?.material ?? query} label="Benötigtes Material" name="material" />
+                <NumberField defaultValue={prefill?.purity} label="Mindestreinheit in %" name="minPurity" />
+                <NumberField defaultValue={prefill?.quantity} label="Benötigte Menge" name="quantity" />
+                <TextField defaultValue={prefill?.unit ?? ""} label="Einheit" name="unit" />
+                <TextField defaultValue={prefill?.certificate ?? ""} label="Benötigtes Zertifikat" name="certificate" />
                 <NumberField defaultValue={undefined} label="Zielpreis EUR/t" name="targetPrice" />
                 <NumberField defaultValue={undefined} label="Verkaufserlös EUR/t" name="revenue" />
                 <NumberField defaultValue={undefined} label="Max. Distanz km" name="maxDistance" />

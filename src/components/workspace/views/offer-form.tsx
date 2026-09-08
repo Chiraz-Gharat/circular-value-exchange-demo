@@ -1,10 +1,10 @@
 import { AVAILABILITY_SCORES } from '../../../config/scoringConfig.ts';
-import { materialClasses,regions } from '../../../domain/context.ts';
+import { regions } from '../../../domain/context.ts';
 import { MiniScore } from '../display.tsx';
-import { FormGrid,NumberField,SelectField,TextField } from '../form-controls.tsx';
+import { FormGrid,MaterialClassField,NumberField,SelectField,TextField } from '../form-controls.tsx';
 import type { WorkspaceState } from '../use-workspace.ts';
-export function OfferForm({ state }: { state: Pick<WorkspaceState, 'page' | 'go' | 'submitOffer'> }) {
-  const { page, go, submitOffer } = state;
+export function OfferForm({ state }: { state: Pick<WorkspaceState, 'extraMaterialClasses' | 'go' | 'page' | 'prefill' | 'prefillKey' | 'registerMaterialClass' | 'submitOffer'> }) {
+  const { extraMaterialClasses, go, page, prefill, prefillKey, registerMaterialClass, submitOffer } = state;
   return (<>{page === "offer" && (
         <section className="page-grid">
           <div className="page-title compact">
@@ -19,29 +19,29 @@ export function OfferForm({ state }: { state: Pick<WorkspaceState, 'page' | 'go'
             <MiniScore title="Kettenerzeugung" body="Material, Menge, Reinheit, Region und Zertifikat steuern die Kettenbildung." />
             <MiniScore title="Ranking" body="FR7 bewertet vier Dimensionen; Datenvertrauen wird separat ausgewiesen." />
           </div>
-          <form className="form-panel" onSubmit={submitOffer}>
+          <form className="form-panel" key={prefillKey} onSubmit={submitOffer}>
             <FormGrid>
               <TextField defaultValue="" label="Anbieter" name="supplier" />
               <TextField defaultValue="" label="Branche" name="sector" />
-              <SelectField label="Region" name="region" options={regions} />
-              <SelectField label="Materialklasse" name="materialClass" options={materialClasses} />
-              <TextField defaultValue="" label="Material" name="material" />
+              <SelectField defaultValue={prefill?.region ?? ""} label="Region" name="region" options={regions} />
+              <MaterialClassField defaultValue={prefill?.materialClass ?? ""} extraClasses={extraMaterialClasses} onRegisterClass={registerMaterialClass} />
+              <TextField defaultValue={prefill?.material ?? ""} label="Material" name="material" />
               <TextField defaultValue="" label="Form" name="form" />
-              <NumberField defaultValue={undefined} label="Reinheit in %" name="purity" />
-              <NumberField defaultValue={undefined} label="Menge" name="quantity" />
-              <TextField defaultValue="" label="Einheit" name="unit" />
+              <NumberField defaultValue={prefill?.purity} label="Reinheit in %" name="purity" />
+              <NumberField defaultValue={prefill?.quantity} label="Menge" name="quantity" />
+              <TextField defaultValue={prefill?.unit ?? ""} label="Einheit" name="unit" />
               <NumberField defaultValue={undefined} label="Qualitätsscore" name="qualityScore" />
               <SelectField
                 label="Verfügbarkeit"
                 name="availability"
                 options={Object.keys(AVAILABILITY_SCORES)}
               />
-              <TextField defaultValue="" label="Zertifikat" name="certificate" />
+              <TextField defaultValue={prefill?.certificate ?? ""} label="Zertifikat" name="certificate" />
               <SelectField label="Transport zulässig" name="transportOk" options={["ja", "nein"]} />
               <SelectField label="Regulatorisch zulässig" name="regulationOk" options={["ja", "nein"]} />
               <NumberField defaultValue={undefined} label="Referenzpreis EUR/t" name="referencePrice" />
               <NumberField defaultValue={undefined} label="Angebotspreis EUR/t" name="offerPrice" />
-              <SelectField label="Datenqualität" name="evidence" options={["validiert", "strukturiert", "proxy"]} />
+              <SelectField defaultValue={prefill?.evidence ?? ""} label="Datenqualität" name="evidence" options={["validiert", "strukturiert", "proxy"]} />
               <TextField defaultValue="" label="Notiz" name="note" />
             </FormGrid>
             <div className="form-actions">

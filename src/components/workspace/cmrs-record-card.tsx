@@ -1,99 +1,195 @@
-import type { CmrsRecord,CmrsValidationIssue } from '../../domain/context.ts';
+import { useState } from 'react';
+import type { CmrsRecord,CmrsSlot } from '../../domain/context.ts';
 import { cmrsCategoryLabels,cmrsJson,cmrsProvBundle,cmrsRecordTypeLabel } from '../../domain/context.ts';
+import { validateCmrsRecordViaApi } from '../../domain/cmrs/client.ts';
+import { cmrsFriendlyIssueMessage } from '../../domain/cmrs/messages.ts';
+
+const SLOT_OPS: CmrsSlot['op'][] = ['min', 'max', 'range', 'equals'];
+
 export function CmrsRecordCard({
   onTransfer,
+  onUpdate,
   record,
 }: {
   onTransfer: (record: CmrsRecord) => void;
+  onUpdate: (record: CmrsRecord) => void;
   record: CmrsRecord;
 }) {
-  const slots = record.recordType === "offer" ? record.properties : record.constraints;
-  const errors = record.validation.filter((issue) => issue.severity === "error");
-  const warnings = record.validation.filter((issue) => issue.severity === "warning");
+  // Bearbeitbare Arbeitskopie: die im Korrekturformular ueblichen Aenderungen
+  // (Material, Kategorie, Menge, Standort, Slot-Werte) werden hier direkt am
+  // erzeugten CMRS-Record vorgenommen, identisch zum Korrekturformular der
+  // echten Anwendung, statt den KI-Vorschlag nur read-only anzuzeigen.
+  const [draft, setDraft] = useState<CmrsRecord>(record);
+  const [busy, setBusy] = useState(false);
+
+  const slotsKey = draft.recordType === "demand" ? "constraints" : "properties";
+  const slots = draft[slotsKey];
+  const errors = draft.validation.filter((issue) => issue.severity === "error");
+
+  function patch(changes: Partial<CmrsRecord>) {
+    setDraft((current) => ({ ...current, ...changes }));
+  }
+
+  function patchSlot(index: number, changes: Partial<CmrsSlot>) {
+    setDraft((current) => {
+      const nextSlots = current[slotsKey].map((slot, i) => (i === index ? { ...slot, ...changes } : slot));
+      return { ...current, [slotsKey]: nextSlots };
+    });
+  }
+
+  async function checkAndSave() {
+    setBusy(true);
+    try {
+      const { validation, valid } = await validateCmrsRecordViaApi(cmrsJson(draft));
+      const updated = { ...draft, validation, valid };
+      setDraft(updated);
+      onUpdate(updated);
+    } catch (error) {
+      setDraft((current) => ({
+        ...current,
+        validation: [{
+          code: "E000",
+          rule: "-",
+          severity: "error",
+          path: "-",
+          message: error instanceof Error ? error.message : "Validierung fehlgeschlagen.",
+        }],
+        valid: false,
+      }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function errorFor(path: string) {
+    return errors.find((issue) => issue.path === path);
+  }
+
+  function slotError(index: number) {
+    return errors.find((issue) => issue.path === `${slotsKey}[${index}].evidence` || issue.path.startsWith(`${slotsKey}[${index}]`));
+  }
+
+  const typeErrors = errors.filter((issue) => !issue.path.startsWith("properties") && !issue.path.startsWith("constraints") && !errorFor(issue.path));
 
   return (
     <article className="cmrs-record">
       <div className="record-head">
         <div>
-          <span className={`pill ${record.valid ? "good" : "warn"}`}>
-            {record.valid ? "CMRS-validiert" : "Prüfpunkte offen"}
+          <span className={`pill ${draft.valid ? "good" : "warn"}`}>
+            {draft.valid ? "CMRS-validiert" : "Prüfpunkte offen"}
           </span>
-          <span className="pill">{cmrsRecordTypeLabel(record.recordType)}</span>
-          <span className="pill">Datenvertrauen {record.confidence}</span>
+          <span className="pill">{cmrsRecordTypeLabel(draft.recordType)}</span>
+          <span className="pill">Datenvertrauen {draft.confidence}</span>
         </div>
-        <strong>{record.recordId}</strong>
+        <strong>{draft.recordId}</strong>
       </div>
 
-      <p className="raw-text">{record.rawText}</p>
+      <p className="raw-text">{draft.rawText}</p>
 
       <div className="lineage-row">
-        <span>Quelle: {record.extractionMethod}</span>
-        <span>Herkunft: {record.createdAt.slice(0, 10)}</span>
+        <span>Quelle: {draft.extractionMethod}</span>
+        <span>Herkunft: {draft.createdAt.slice(0, 10)}</span>
         <span>Nachweisfelder: {slots.length}</span>
       </div>
 
-      <dl className="cmrs-summary-grid">
-        <div><dt>label_raw</dt><dd>{record.materialLabel}</dd></div>
-        <div><dt>canonical_name</dt><dd>{record.canonicalName}</dd></div>
-        <div><dt>CMRS-Kategorie</dt><dd>{cmrsCategoryLabels[record.cmrsCategory] ?? record.cmrsCategory}</dd></div>
-        <div><dt>Marktplatzklasse</dt><dd>{record.materialClass}</dd></div>
-        <div><dt>Menge</dt><dd>{record.quantityValue ?? "-"} {record.quantityUnit}</dd></div>
-        <div><dt>Region</dt><dd>{record.region}</dd></div>
-      </dl>
+      <div className="cmrs-summary-grid cmrs-summary-edit">
+        <label>
+          <span>label_raw</span>
+          <input onChange={(event) => patch({ materialLabel: event.target.value })} value={draft.materialLabel} />
+          {errorFor("material.label_raw") ? <em className="field-error-msg">{cmrsFriendlyIssueMessage(errorFor("material.label_raw")!)}</em> : null}
+        </label>
+        <label>
+          <span>canonical_name</span>
+          <input onChange={(event) => patch({ canonicalName: event.target.value })} value={draft.canonicalName} />
+        </label>
+        <label>
+          <span>CMRS-Kategorie</span>
+          <select
+            onChange={(event) => patch({ cmrsCategory: event.target.value })}
+            value={draft.cmrsCategory}
+          >
+            {Object.entries(cmrsCategoryLabels).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+          {errorFor("material.category") ? <em className="field-error-msg">{cmrsFriendlyIssueMessage(errorFor("material.category")!)}</em> : null}
+        </label>
+        <label>
+          <span>Menge</span>
+          <span className="cmrs-inline-fields">
+            <input
+              onChange={(event) => patch({ quantityValue: event.target.value === "" ? null : Number(event.target.value) })}
+              type="number"
+              value={draft.quantityValue ?? ""}
+            />
+            <input onChange={(event) => patch({ quantityUnit: event.target.value })} value={draft.quantityUnit} />
+          </span>
+          {errorFor("quantity") || errorFor("quantity.value") || errorFor("quantity.unit_ucum") ? (
+            <em className="field-error-msg">
+              {cmrsFriendlyIssueMessage((errorFor("quantity") || errorFor("quantity.value") || errorFor("quantity.unit_ucum"))!)}
+            </em>
+          ) : null}
+        </label>
+        <label>
+          <span>Standort</span>
+          <input onChange={(event) => patch({ location: event.target.value })} value={draft.location} />
+          {errorFor("context.location") ? <em className="field-error-msg">{cmrsFriendlyIssueMessage(errorFor("context.location")!)}</em> : null}
+        </label>
+        <label>
+          <span>Region</span>
+          <input onChange={(event) => patch({ region: event.target.value })} value={draft.region} />
+        </label>
+      </div>
 
       <div className="slot-list">
-        <strong>{record.recordType === "unknown" ? "Typ ungeklärt" : record.recordType === "offer" ? "Properties" : "Constraints"}</strong>
+        <strong>{draft.recordType === "unknown" ? "Typ ungeklärt" : draft.recordType === "offer" ? "Properties" : "Constraints"}</strong>
         {slots.length === 0 ? (
           <p>Keine Slots erkannt. Der Datensatz bleibt erklärbar, aber fachlich unvollständig.</p>
         ) : (
-          slots.map((slot) => (
-            <span key={`${record.recordId}-${slot.propertyKey}-${slot.evidence}`}>
-              {slot.label}: {slot.op} {slot.value} {slot.unit}
-              {slot.evidenceStart !== undefined ? ` · ${slot.evidenceStart}-${slot.evidenceEnd}` : ""}
-            </span>
+          slots.map((slot, index) => (
+            <div className="slot-row-edit" key={`${draft.recordId}-${slot.propertyKey}-${index}`}>
+              <span>{slot.label}</span>
+              <select onChange={(event) => patchSlot(index, { op: event.target.value as CmrsSlot['op'] })} value={slot.op}>
+                {SLOT_OPS.map((op) => <option key={op} value={op}>{op}</option>)}
+              </select>
+              <input
+                onChange={(event) => patchSlot(index, { value: Number(event.target.value) })}
+                type="number"
+                value={typeof slot.value === "number" ? slot.value : ""}
+              />
+              <input onChange={(event) => patchSlot(index, { unit: event.target.value })} value={slot.unit} />
+              {slotError(index) ? <em className="slot-error-msg">{cmrsFriendlyIssueMessage(slotError(index)!)}</em> : null}
+            </div>
           ))
         )}
       </div>
 
-      <IssueList errors={errors} warnings={warnings} />
+      {typeErrors.length > 0 ? (
+        <div className="issue-list">
+          {typeErrors.map((issue) => (
+            <p className="issue-error" key={`${issue.code}-${issue.path}`}>{cmrsFriendlyIssueMessage(issue)}</p>
+          ))}
+        </div>
+      ) : null}
 
       <details className="json-details">
         <summary>CMRS-JSON anzeigen</summary>
-        <pre>{JSON.stringify(cmrsJson(record), null, 2)}</pre>
+        <pre>{JSON.stringify(cmrsJson(draft), null, 2)}</pre>
       </details>
 
       <details className="json-details">
         <summary>Herkunftsdaten anzeigen</summary>
-        <pre>{JSON.stringify(cmrsProvBundle(record), null, 2)}</pre>
+        <pre>{JSON.stringify(cmrsProvBundle(draft), null, 2)}</pre>
       </details>
 
       <div className="form-actions">
-        <button onClick={() => onTransfer(record)} type="button">
-          {record.recordType === "unknown" ? "Manuelle Prüfung erforderlich" : record.recordType === "offer" ? "Ins Angebotsregister übernehmen" : "Ins Gesuchsregister übernehmen"}
+        <button disabled={busy} onClick={checkAndSave} type="button">
+          {busy ? "Wird geprüft…" : "Korrektur prüfen und speichern"}
+        </button>
+        <button onClick={() => onTransfer(draft)} type="button">
+          {draft.recordType === "unknown" ? "Manuelle Prüfung erforderlich" : draft.recordType === "offer" ? "Ins Angebotsregister übernehmen" : "Ins Gesuchsregister übernehmen"}
         </button>
       </div>
     </article>
-  );
-}
-
-export function IssueList({
-  errors,
-  warnings,
-}: {
-  errors: CmrsValidationIssue[];
-  warnings: CmrsValidationIssue[];
-}) {
-  if (errors.length === 0 && warnings.length === 0) {
-    return <p className="issue-clean">Validator: keine Fehler, keine Warnungen.</p>;
-  }
-
-  return (
-    <div className="issue-list">
-      {[...errors, ...warnings].map((issue) => (
-        <p className={issue.severity === "error" ? "issue-error" : "issue-warning"} key={`${issue.code}-${issue.path}`}>
-          <strong>{issue.code}</strong> {issue.path}: {issue.message}
-        </p>
-      ))}
-    </div>
   );
 }

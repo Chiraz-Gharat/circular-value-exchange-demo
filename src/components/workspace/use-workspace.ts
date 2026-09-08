@@ -4,7 +4,10 @@ import { DEFAULT_WEIGHTS as defaultWeights } from '../../config/scoringConfig.ts
 import { CURRENT_SCHEMA_VERSION,STORAGE_KEYS } from '../../config/storage.ts';
 import scenario from '../../data/demo/scenario.ts';
 import type { CmrsRecord,PageId } from '../../domain/context.ts';
-import { boolValue,cmrsRecordTypeLabel,cmrsSampleTexts,initialCmrsRecords,initialDemands,initialOffers,initialProcessors,isPageId,nextId,numberValue,parseCmrsText,readStoredRows,readStoredWeights,textValue } from '../../domain/context.ts';
+import { boolValue,cmrsRecordTypeLabel,cmrsSampleTexts,initialCmrsRecords,initialDemands,initialOffers,initialProcessors,isPageId,materialClasses,nextId,numberValue,readStoredRows,readStoredWeights,textValue } from '../../domain/context.ts';
+import { extractCmrsRecordViaApi } from '../../domain/cmrs/client.ts';
+import type { CmrsFormPrefill } from '../../domain/cmrs/prefill.ts';
+import { cmrsFormPrefill } from '../../domain/cmrs/prefill.ts';
 import type { ModelConfig } from '../../domain/engine.ts';
 import { generateChains,rejectedPairs,scoreChains,validateDataset } from '../../domain/engine.ts';
 import type { Demand,Offer,Processor,ScoreWeights } from '../../types/model.ts';
@@ -17,6 +20,14 @@ export function useWorkspace() {
   const [provenance, setProvenance] = useState(scenario.provenance);
   const [cmrsRecords, setCmrsRecords] = useState<CmrsRecord[]>(initialCmrsRecords);
   const [cmrsText, setCmrsText] = useState(cmrsSampleTexts[0]);
+  const [cmrsLoading, setCmrsLoading] = useState(false);
+  const [extraMaterialClasses, setExtraMaterialClasses] = useState<string[]>([]);
+  // Vorbelegung aus einem uebernommenen CMRS-Record. Die Formulare arbeiten mit
+  // unkontrollierten Feldern (defaultValue), deshalb erzwingt der hochgezaehlte
+  // prefillKey ein Neuaufsetzen, sobald ein weiterer Record uebernommen wird.
+  const [prefill, setPrefill] = useState<CmrsFormPrefill | null>(null);
+  const [prefillVersion, setPrefillVersion] = useState(0);
+  const prefillKey = `prefill-${prefillVersion}`;
   const [scoreWeights, setScoreWeights] = useState<ScoreWeights>(defaultWeights);
   const [query, setQuery] = useState("");
   const [selectedChainId, setSelectedChainId] = useState("K001");
@@ -96,21 +107,47 @@ export function useWorkspace() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function submitCmrsText(event: FormEvent<HTMLFormElement>) {
+  async function submitCmrsText(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const record = parseCmrsText(cmrsText, nextId("CMRS-", cmrsRecords.map((item) => item.recordId)));
-    setCmrsRecords((current) => [record, ...current]);
-    setMessage(
-      `${record.recordId} wurde als ${cmrsRecordTypeLabel(record.recordType)} strukturiert: ${
-        record.valid ? "CMRS-validiert" : "mit offenen Prüfpunkten"
-      }.`,
+    setCmrsLoading(true);
+    try {
+      const record = await extractCmrsRecordViaApi(
+        cmrsText,
+        nextId("CMRS-", cmrsRecords.map((item) => item.recordId)),
+      );
+      setCmrsRecords((current) => [record, ...current]);
+      setMessage(
+        `${record.recordId} wurde als ${cmrsRecordTypeLabel(record.recordType)} strukturiert: ${
+          record.valid ? "CMRS-validiert" : "mit offenen Prüfpunkten"
+        }.`,
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "CMRS-Extraktion fehlgeschlagen.");
+    } finally {
+      setCmrsLoading(false);
+    }
+  }
+
+  function updateCmrsRecord(updated: CmrsRecord) {
+    setCmrsRecords((current) => current.map((item) => (item.recordId === updated.recordId ? updated : item)));
+  }
+
+  function registerMaterialClass(materialClass: string) {
+    setExtraMaterialClasses((current) =>
+      current.includes(materialClass) || materialClasses.includes(materialClass)
+        ? current
+        : [...current, materialClass],
     );
   }
 
   function transferCmrsRecord(record: CmrsRecord) {
     if (record.recordType === 'unknown') { setMessage('Datensatztyp unbekannt; manuelle Prüfung erforderlich.'); return; }
-    setMessage(record.valid ? 'Materialdaten liegen vor. RQ2-Marktparameter und Freigaben müssen ausdrücklich erfasst werden.' : 'Offene RQ1-Prüfpunkte müssen vor einer Freigabe geklärt werden.');
-    if(record.valid) go(record.recordType === 'offer' ? 'offer' : 'search');
+    setMessage(record.valid ? 'Materialdaten aus dem CMRS-Record wurden übernommen. RQ2-Marktparameter und Freigaben müssen ausdrücklich erfasst werden.' : 'Offene RQ1-Prüfpunkte müssen vor einer Freigabe geklärt werden.');
+    if(record.valid) {
+      setPrefill(cmrsFormPrefill(record));
+      setPrefillVersion((current) => current + 1);
+      go(record.recordType === 'offer' ? 'offer' : 'search');
+    }
   }
 
   function submitOffer(event: FormEvent<HTMLFormElement>) {
@@ -174,6 +211,6 @@ export function useWorkspace() {
   }
 
 
-  return { page, offers, setOffers, demands, setDemands, processors, setProcessors, model, setModel, provenance, setProvenance, cmrsRecords, setCmrsRecords, cmrsText, setCmrsText, scoreWeights, setScoreWeights, query, setQuery, setSelectedChainId, message, setMessage, chains, discardedPairs, scoredChains, selectedChain, exactChains, rankedChains, excludedChains, cmrsIssueCount, confidenceStats, filteredOffers, filteredDemands, go, submitCmrsText, transferCmrsRecord, submitOffer, submitDemand };
+  return { page, offers, setOffers, demands, setDemands, processors, setProcessors, model, setModel, provenance, setProvenance, cmrsRecords, setCmrsRecords, cmrsText, setCmrsText, cmrsLoading, extraMaterialClasses, registerMaterialClass, prefill, prefillKey, scoreWeights, setScoreWeights, query, setQuery, setSelectedChainId, message, setMessage, chains, discardedPairs, scoredChains, selectedChain, exactChains, rankedChains, excludedChains, cmrsIssueCount, confidenceStats, filteredOffers, filteredDemands, go, submitCmrsText, updateCmrsRecord, transferCmrsRecord, submitOffer, submitDemand };
 }
 export type WorkspaceState = ReturnType<typeof useWorkspace>;

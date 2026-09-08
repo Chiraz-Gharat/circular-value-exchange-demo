@@ -66,7 +66,7 @@ scripts/browser-check.mjs     Desktop-/Mobil-Akzeptanztest
 
 ## Technologiestack
 
-React 19.2.6, TypeScript 5.9.3 im Strict-Modus und Vite 8.2.2. Die Anwendung läuft vollständig im Browser. Playwright 1.62.1 prüft die tatsächliche Oberfläche. Es gibt keine Server-, Python-, SQL- oder externe Modelllaufzeit. Der bisherige vinext-/Cloudflare-Serveradapter ist nicht mehr Teil dieses statischen Pages-Stands. Das Lockfile fixiert die Abhängigkeiten.
+React 19.2.6, TypeScript 5.9.3 im Strict-Modus und Vite 8.2.2. Die Anwendung läuft vollständig im Browser. Playwright 1.62.1 prüft die tatsächliche Oberfläche. Es gibt keine Server-, Python-, SQL- oder externe Modelllaufzeit. Der bisherige vinext-/Cloudflare-Serveradapter ist nicht mehr Teil dieses statischen Pages-Stands. Das Lockfile fixiert die Abhängigkeiten. Das gilt für den deployten Pages-Stand; für die optionale, rein lokale RQ1-Teamintegration siehe unten.
 
 ## Installation
 
@@ -85,6 +85,14 @@ npm run dev -- --host 127.0.0.1 --port 8031
 ```
 
 Adresse: `http://127.0.0.1:8031/`. Daten liegen nur im Browserprofil. Der JSON-Export ist die portable Sicherung; ein anderer Browser oder Port besitzt einen anderen lokalen Speicher. Es gibt keine gemeinsame Datenhaltung, Anmeldung oder Zugriffskontrolle. Keine vertraulichen Echtdaten importieren.
+
+## RQ1-Teamintegration (lokal)
+
+Der "CMRS-Dateneingang" ruft für die Extraktion ausschließlich den echten RQ1-Server auf (separates Repository, LLM-first-Extraktion mit Ollama/Qwen 2.5 7B, Flask unter `http://localhost:5000`). Es gibt bewusst kein regelbasiertes Fallback: Ist der Server nicht erreichbar, erscheint eine Fehlermeldung statt eines unechten Ergebnisses. Der Rest der Anwendung (Marktplatz, Kettenplanung, FR7-Ranking) bleibt davon unabhängig und läuft weiterhin vollständig im Browser; nur der CMRS-Dateneingang benötigt den lokalen Server.
+
+Ergänzte Dateien: `src/domain/cmrs/client.ts` (Extraktion, Revalidierung, Kategorieprüfung gegen `/api/process_text`, `/api/validate_record`, `/api/check_category`), `src/domain/cmrs/prefill.ts` (Übergabe der ableitbaren Felder an Angebots-/Gesuchsformular), `src/domain/cmrs/messages.ts` (Fehlermeldungen mit Formular-Bezeichnung statt Schema-Pfad). Die CMRS-Record-Karte ist dadurch korrigierbar (Material, Kategorie, Menge, Slots) und revalidiert live gegen den echten Server; das Materialklasse-Feld in Angebot und Gesuch erlaubt eine KI-geprüfte Kategorieerweiterung (`+ Neue Kategorie vorschlagen…`), analog zum "Manuell erfassen"-Formular des RQ1-Servers.
+
+Voraussetzung: Der RQ1-Server läuft lokal (`python app.py`) mit erreichbarem Ollama. Läuft er nicht, bleiben alle anderen Seiten (Marktplatz, Angebot, Gesuch, Kettenplanung) unverändert nutzbar, nur der CMRS-Dateneingang zeigt eine Fehlermeldung an.
 
 ## Build
 
