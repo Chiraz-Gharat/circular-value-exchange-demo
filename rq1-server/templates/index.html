@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMRS Vision | AI Data Extractor</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="blob-bg">
+        <div class="blob blob1"></div>
+        <div class="blob blob2"></div>
+        <div class="blob blob3"></div>
+    </div>
+
+    <nav class="glass-nav">
+        <div class="nav-content">
+            <h1 class="logo">CMRS <span class="highlight">Vision</span></h1>
+            <ul class="nav-links">
+                <li><a href="#" class="active">Extractor</a></li>
+                <li><a href="#database-section">Database</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <h2 class="title">Intelligent <span class="gradient-text">Material Mapping</span></h2>
+            <p class="subtitle">Extract structured CMRS data from unstructured free-text effortlessly.</p>
+        </header>
+
+        <!-- Tool Wrapper (Split Layout) -->
+        <div class="tool-wrapper">
+            
+            <!-- Input Side -->
+            <div class="glass-panel input-panel">
+                <h3>Input Text</h3>
+
+                <div class="mode-switch" role="tablist">
+                    <button type="button" class="mode-switch-btn active" id="mode-btn-ai" data-mode="ai">KI-Extraktion</button>
+                    <button type="button" class="mode-switch-btn" id="mode-btn-manual" data-mode="manual">Manuell erfassen</button>
+                </div>
+
+                <form id="extraction-form">
+                    <textarea id="free-text-input" placeholder="e.g. '500 kg PP-Regranulat, Feuchte max 0,3 %, Berlin.'" rows="6" required></textarea>
+
+                    <div class="action-row">
+                        <button type="button" class="btn-secondary" id="btn-demo">Load Demo Text</button>
+                        <button type="submit" class="btn-primary" id="btn-submit">
+                            <span class="btn-text">Extract Data</span>
+                            <div class="loader" id="submit-loader"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Output Side -->
+            <div class="glass-panel output-panel">
+                <div class="panel-header">
+                    <h3>Ergebnis prüfen &amp; korrigieren</h3>
+                    <div class="badge-row">
+                        <div id="validation-badge" class="badge hidden"></div>
+                    </div>
+                </div>
+
+                <p id="output-placeholder" class="output-placeholder">Noch kein Ergebnis – gib links einen Text ein und klicke auf "Extract Data".</p>
+
+                <!-- Einfaches, editierbares Formular statt roher JSON-Ansicht -->
+                <form id="record-form" class="record-form hidden">
+
+                    <h4 class="form-subheading">Pflichtfelder <span class="req-tag">MUSS</span></h4>
+                    <div class="field-row">
+                        <label for="f-type">Art</label>
+                        <select id="f-type" data-path="type"></select>
+                    </div>
+                    <div class="field-row">
+                        <label for="f-label">Material</label>
+                        <input type="text" id="f-label" data-path="material.label_raw" placeholder="z. B. PP-Regranulat">
+                    </div>
+                    <div class="field-row">
+                        <label for="f-category">Kategorie</label>
+                        <select id="f-category" data-path="material.category"></select>
+                        <div class="new-category-row hidden" id="new-category-row">
+                            <input type="text" id="f-new-category" placeholder="z. B. Textilfasern">
+                            <button type="button" class="btn-secondary btn-sm" id="btn-check-category">Prüfen</button>
+                            <div class="loader" id="check-category-loader"></div>
+                        </div>
+                        <p class="field-hint hidden" id="new-category-hint"></p>
+                    </div>
+                    <div class="field-row">
+                        <label for="f-location">Standort</label>
+                        <input type="text" id="f-location" data-path="context.location" placeholder="z. B. Berlin">
+                    </div>
+                    <div class="field-row" id="qty-row">
+                        <label for="f-qty-value">Menge <span class="req-tag req-tag-sm">bei Angebot Pflicht</span></label>
+                        <div class="field-inline">
+                            <input type="number" step="any" id="f-qty-value" data-path="quantity.value" placeholder="Zahl">
+                            <select id="f-qty-unit" data-path="quantity.unit_ucum"></select>
+                        </div>
+                    </div>
+
+                    <h4 class="form-subheading">Eigenschaften &amp; Anforderungen</h4>
+                    <div id="slots-container"></div>
+                    <button type="button" class="btn-secondary btn-sm btn-add-slot" id="btn-add-slot">+ Eigenschaft hinzufügen</button>
+
+                    <button type="button" class="form-toggle-optional" id="btn-toggle-optional">
+                        <span id="optional-toggle-icon">▸</span> Optionale Angaben <span class="opt-tag">KANN</span>
+                    </button>
+                    <div class="optional-fields hidden" id="optional-fields">
+                        <div class="field-row">
+                            <label for="f-canonical">Normalisierter Name <span class="opt-tag opt-tag-readonly">system-ermittelt</span></label>
+                            <input type="text" id="f-canonical" readonly disabled placeholder="wird automatisch ermittelt (kontrolliertes Vokabular oder KI-Schätzung)">
+                        </div>
+                        <div class="field-row">
+                            <label for="f-basis">Mengenbasis</label>
+                            <select id="f-basis" data-path="quantity.basis">
+                                <option value="">— keine Angabe —</option>
+                                <option value="as_is">wie besehen (as_is)</option>
+                                <option value="dry_basis">Trockenmasse (dry_basis)</option>
+                                <option value="wet_basis">Feuchtmasse (wet_basis)</option>
+                            </select>
+                        </div>
+                        <div class="field-row">
+                            <label for="f-availability">Verfügbarkeit</label>
+                            <select id="f-availability" data-path="quantity.availability">
+                                <option value="">— keine Angabe —</option>
+                                <option value="one_time">einmalig</option>
+                                <option value="recurring">wiederkehrend</option>
+                                <option value="unknown">unbekannt</option>
+                            </select>
+                        </div>
+                        <div class="field-row">
+                            <label for="f-intended-use">Verwendungszweck</label>
+                            <input type="text" id="f-intended-use" data-path="context.intended_use" placeholder="z. B. Spritzguss">
+                        </div>
+                        <div class="field-row">
+                            <label for="f-lowcode">LoW/EWC-Abfallcode <span class="opt-tag req-tag-sm">bei Abfallstrom empfohlen</span></label>
+                            <input type="text" id="f-lowcode" data-path="material.normalized.codes.low_code" placeholder="z. B. 12 01 05">
+                        </div>
+                        <div class="field-row">
+                            <label for="f-synonyms">Synonyme (kommagetrennt)</label>
+                            <input type="text" id="f-synonyms" data-path-list="material.normalized.synonyms" placeholder="z. B. PP-Regrind, PP-Rezyklat">
+                        </div>
+                        <div class="field-row">
+                            <label for="f-market-region">Markt-/Rechtsraum (kommagetrennt)</label>
+                            <input type="text" id="f-market-region" data-path-list="context.market_region" placeholder="z. B. EU, DACH">
+                        </div>
+                        <div class="field-row">
+                            <label for="f-frequency">Frequenz (bei wiederkehrender Menge)</label>
+                            <input type="text" id="f-frequency" data-path="quantity.frequency" placeholder="z. B. weekly / monatlich">
+                        </div>
+
+                        <h4 class="form-subheading form-subheading-sm">Normbezüge (standards)</h4>
+                        <div id="standards-container"></div>
+                        <button type="button" class="btn-secondary btn-sm btn-add-slot" id="btn-add-standard">+ Norm hinzufügen</button>
+
+                        <h4 class="form-subheading form-subheading-sm">Sicherheits-/Compliance-Angaben</h4>
+                        <div id="compliance-container"></div>
+                        <button type="button" class="btn-secondary btn-sm btn-add-slot" id="btn-add-compliance">+ Compliance-Eintrag hinzufügen</button>
+                    </div>
+
+                    <div class="action-row">
+                        <button type="button" class="btn-secondary" id="btn-toggle-json">JSON anzeigen</button>
+                        <button type="submit" class="btn-primary" id="btn-save">
+                            <span class="btn-text">Speichern</span>
+                            <div class="loader" id="save-loader"></div>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="code-container hidden" id="json-container">
+                    <pre><code id="json-output">// Extracted CMRS format will appear here...</code></pre>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Database Section -->
+        <section id="database-section" class="db-section">
+            <div class="glass-panel w-100">
+                <div class="panel-header">
+                    <h3>Saved Records</h3>
+                    <button class="btn-secondary btn-sm" id="btn-refresh" title="Refresh Table">Refresh</button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="db-table" id="records-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Material / Text</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Valid</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-tbody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for showing JSON of past records -->
+    <div id="json-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <span class="close-btn">&times;</span>
+            <h3>Record Details</h3>
+            <pre><code id="modal-json-content"></code></pre>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+venv/
+.env
+database.db
+canonical_name_memory.json
+custom_categories.json
+
+# Root-.gitignore schliesst ".env.*" pauschal aus (fuer Frontend-Envs) - die
+# Vorlagendatei ohne echte Werte soll aber im Repo bleiben.
+!.env.example

@@ -1,0 +1,54 @@
+# Startet Frontend und RQ1-Server zusammen fuer den lokalen Betrieb dieses
+# einen Repositorys. Ollama laeuft weiter nativ auf dem Host (Modelle muessen
+# dort schon per `ollama pull qwen2.5:7b` vorhanden sein). Der statische
+# GitHub-Pages-Build (siehe .github/workflows/pages.yml) ist davon unabhaengig
+# und bleibt unveraendert.
+#
+# Start:  docker compose up --build
+# Stop:   docker compose down
+
+name: circular-value-exchange
+
+services:
+  rq1-server:
+    build: ./rq1-server
+    image: rq1-server
+    container_name: rq1-server
+    ports:
+      - "5000:5000"
+    env_file:
+      # .env ist optional: ohne Datei laeuft der Server trotzdem, nur ohne
+      # Gemini-Cloud-Fallback (Ollama/Qwen 2.5 7B ist ohnehin der einzige
+      # produktiv genutzte Provider).
+      - path: ./rq1-server/.env
+        required: false
+    environment:
+      # .env kann OLLAMA_HOST=http://localhost:11434 enthalten (fuer den
+      # nativen Betrieb ohne Docker) - im Container muss stattdessen der
+      # Host ueber diesen speziellen DNS-Namen erreicht werden.
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./rq1-server/database.db:/app/database.db
+      - ./rq1-server/canonical_name_memory.json:/app/canonical_name_memory.json
+      - ./rq1-server/custom_categories.json:/app/custom_categories.json
+    restart: unless-stopped
+
+  frontend:
+    image: node:22-slim
+    container_name: cvx-frontend
+    working_dir: /app
+    ports:
+      - "8031:8031"
+    volumes:
+      - .:/app
+      # node_modules in eigenem Docker-Volume statt Bind-Mount: unter Windows
+      # installierte Pakete (esbuild u.a.) haben plattformspezifische
+      # Binaries, die im Linux-Container nicht funktionieren wuerden.
+      - frontend_node_modules:/app/node_modules
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 8031"
+    restart: unless-stopped
+
+volumes:
+  frontend_node_modules:

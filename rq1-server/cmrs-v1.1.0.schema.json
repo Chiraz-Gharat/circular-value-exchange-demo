@@ -1,0 +1,391 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cmrs.example.org/schema/cmrs-v1.1.0.json",
+  "title": "CMRS v1.1.0 – Canonical Material Requirement Schema",
+  "description": "Einheitliches Zielformat für Materialangebote und -nachfragen (RQ1-Spezifikation).",
+  "type": "object",
+  "required": ["type", "id", "raw_input", "material", "context", "provenance"],
+  "additionalProperties": false,
+
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["offer", "demand"],
+      "description": "Record-Typ: Angebot (offer) oder Nachfrage (demand)."
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Eindeutige ID im System (z. B. OFF-001, DEM-042)."
+    },
+    "raw_input": {
+      "type": "object",
+      "required": ["text", "language"],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Originale Nutzereingabe (Freitext)."
+        },
+        "language": {
+          "type": "string",
+          "enum": ["de", "en"],
+          "description": "Sprache der Eingabe."
+        }
+      }
+    },
+
+    "material": {
+      "$ref": "#/$defs/MaterialBlock"
+    },
+
+    "quantity": {
+      "$ref": "#/$defs/QuantityBlock"
+    },
+
+    "properties": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/PropertyAssertion"},
+      "description": "Eigenschaften des Materials (für Angebote)."
+    },
+
+    "constraints": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/RequirementConstraint"},
+      "description": "Anforderungen/Constraints (für Nachfragen, mind. 1)."
+    },
+
+    "standards": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/StandardRef"},
+      "description": "Norm-/Testbezüge."
+    },
+
+    "safety_compliance": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/SafetyComplianceEntry"},
+      "description": "Sicherheits-/Compliance-Constraints."
+    },
+
+    "context": {
+      "$ref": "#/$defs/ContextBlock"
+    },
+
+    "provenance": {
+      "$ref": "#/$defs/ProvenanceBlock"
+    }
+  },
+
+  "if": {"properties": {"type": {"const": "offer"}}},
+  "then": {
+    "required": ["quantity"],
+    "properties": {
+      "quantity": {"$ref": "#/$defs/QuantityBlock"}
+    }
+  },
+
+  "$defs": {
+    "MaterialBlock": {
+      "type": "object",
+      "required": ["label_raw", "category"],
+      "additionalProperties": false,
+      "properties": {
+        "label_raw": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Materialphrase aus dem Text (nahe am Original)."
+        },
+        "category": {
+          "type": "string",
+          "description": "Kontrollierte Materialkategorie. Kein Schema-Enum (war zuvor auf 8 Werte begrenzt und widersprach den 14 Kategorien in controlled_vocabularies.py) - die eigentliche Pruefung uebernimmt validator.py R18/E240 gegen MATERIAL_CATEGORIES plus dynamisch registrierte, KI-geprueft neue Kategorien (custom_categories.json)."
+        },
+        "normalized": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "canonical_name": {
+              "type": "string",
+              "description": "Normalisierter kanonischer Name."
+            },
+            "codes": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "low_code": {
+                  "type": "string",
+                  "description": "LoW/EWC Code für Abfallströme (z. B. '12 01 05').",
+                  "pattern": "^\\d{2}\\s\\d{2}\\s\\d{2}\\*?$"
+                }
+              }
+            },
+            "synonyms": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Alternative Bezeichnungen/Synonyme."
+            }
+          }
+        }
+      }
+    },
+
+    "QuantityBlock": {
+      "type": "object",
+      "required": ["value", "unit_ucum"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Numerischer Mengenwert (> 0)."
+        },
+        "unit_ucum": {
+          "type": "string",
+          "$ref": "#/$defs/UCUMWhitelist",
+          "description": "Einheit als UCUM-Code."
+        },
+        "basis": {
+          "type": "string",
+          "enum": ["as_is", "dry_basis", "wet_basis"],
+          "description": "Basis der Mengenangabe."
+        },
+        "availability": {
+          "type": "string",
+          "enum": ["one_time", "recurring", "unknown"],
+          "description": "Verfügbarkeit."
+        },
+        "frequency": {
+          "type": "string",
+          "description": "Frequenztext (z. B. 'weekly'), wenn recurring."
+        }
+      }
+    },
+
+    "PropertyAssertion": {
+      "type": "object",
+      "required": ["property_key"],
+      "anyOf": [
+        {"required": ["value"]},
+        {"required": ["min", "max"]}
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "property_key": {
+          "type": "string",
+          "$ref": "#/$defs/PropertyKeyEnum",
+          "description": "Kontrollierter Property-Key."
+        },
+        "value": {
+          "oneOf": [{"type": "number"}, {"type": "string"}],
+          "description": "Wert (numerisch oder textuell)."
+        },
+        "op": {
+          "type": "string",
+          "enum": ["min", "max", "range", "equals"],
+          "description": "Optionaler Operator, wenn der Text die Eigenschaft als Grenzwert formuliert (z. B. 'Feuchte max 0,3 %')."
+        },
+        "min": {
+          "type": "number",
+          "description": "Untergrenze für op=range."
+        },
+        "max": {
+          "type": "number",
+          "description": "Obergrenze für op=range."
+        },
+        "unit_ucum": {
+          "type": "string",
+          "$ref": "#/$defs/UCUMWhitelist",
+          "description": "UCUM-Einheit für numerische Werte."
+        },
+        "method": {
+          "type": "string",
+          "description": "Messmethode (falls bekannt)."
+        },
+        "standard_ref": {
+          "type": "string",
+          "description": "Norm-/Testreferenz."
+        },
+        "evidence": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/EvidenceItem"},
+          "description": "Textbelege."
+        }
+      }
+    },
+
+    "RequirementConstraint": {
+      "type": "object",
+      "required": ["property_key", "op"],
+      "additionalProperties": false,
+      "properties": {
+        "property_key": {
+          "type": "string",
+          "$ref": "#/$defs/PropertyKeyEnum",
+          "description": "Kontrollierter Property-Key."
+        },
+        "op": {
+          "type": "string",
+          "enum": ["min", "max", "range", "equals"],
+          "description": "Operator."
+        },
+        "value": {
+          "oneOf": [{"type": "number"}, {"type": "string"}],
+          "description": "Wert für min/max/equals."
+        },
+        "min": {
+          "type": "number",
+          "description": "Untergrenze für range."
+        },
+        "max": {
+          "type": "number",
+          "description": "Obergrenze für range."
+        },
+        "unit_ucum": {
+          "type": "string",
+          "$ref": "#/$defs/UCUMWhitelist",
+          "description": "UCUM-Einheit."
+        },
+        "standard_ref": {
+          "type": "string",
+          "description": "Norm-/Testreferenz."
+        },
+        "evidence": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/EvidenceItem"},
+          "description": "Textbelege."
+        }
+      }
+    },
+
+    "EvidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "quote": {
+          "type": "string",
+          "description": "Direktzitat aus dem Originaltext."
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Start-Offset (Zeichen) im Originaltext."
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "End-Offset (Zeichen) im Originaltext."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Konfidenz-Score [0..1] (optional)."
+        }
+      }
+    },
+
+    "StandardRef": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Norm-/Standardname (z. B. 'ISO 14001')."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version/Jahr der Norm."
+        }
+      }
+    },
+
+    "SafetyComplianceEntry": {
+      "type": "object",
+      "required": ["regime"],
+      "additionalProperties": false,
+      "properties": {
+        "regime": {
+          "type": "string",
+          "enum": ["REACH", "SCIP", "RoHS", "CLP", "WEEE", "WFD", "other"],
+          "description": "Regulatorisches Regime."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Freitext-Hinweise zum Compliance-Aspekt."
+        }
+      }
+    },
+
+    "ContextBlock": {
+      "type": "object",
+      "required": ["location"],
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Standort/Region (Pflicht)."
+        },
+        "market_region": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Markt-/Rechtsraum (z. B. 'EU')."
+        },
+        "intended_use": {
+          "type": "string",
+          "description": "Verwendungszweck (falls genannt)."
+        }
+      }
+    },
+
+    "ProvenanceBlock": {
+      "type": "object",
+      "required": ["created_at", "source", "cmrs_version"],
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "description": "Erstellungszeitpunkt (ISO 8601)."
+        },
+        "source": {
+          "type": "string",
+          "description": "Erzeuger: 'manual' oder Tool-ID (z. B. 'parser_v1')."
+        },
+        "cmrs_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Schema-Version (SemVer)."
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "ID des Annotators oder Tools."
+        }
+      }
+    },
+
+    "UCUMWhitelist": {
+      "type": "string",
+      "enum": ["kg", "t", "g", "L", "m3", "%", "Cel", "mm", "um", "mg/kg", "MPa", "kJ/kg", "MJ/kg", "g/(10.min)", "kg/m3"],
+      "description": "Erlaubte UCUM-Codes (Whitelist v1)."
+    },
+
+    "PropertyKeyEnum": {
+      "type": "string",
+      "enum": [
+        "purity", "moisture_content", "foreign_matter_content", "contamination_rate",
+        "color_description", "odor_description", "melt_flow_index", "density", "ash_content",
+        "tensile_strength", "elongation_at_break", "impact_strength", "recycled_content",
+        "bio_based_content", "oil_content", "chlorine_content", "sulfur_content",
+        "iron_content", "aluminum_content", "copper_content", "zinc_content",
+        "nickel_content", "lead_content", "cadmium_content", "mercury_content",
+        "chromium_content", "arsenic_content", "particle_size_max", "particle_size_range", "particle_size_d50",
+        "bulk_density", "solvent_fraction", "water_content", "flash_point",
+        "boiling_point_min", "boiling_point_max", "voc_content", "calorific_value_lhv",
+        "biomass_type", "resin_content", "ash_melting_behavior", "quantity"
+      ],
+      "description": "Kontrollierter Property-Katalog v1 (40 Keys + quantity)."
+    }
+  }
+}

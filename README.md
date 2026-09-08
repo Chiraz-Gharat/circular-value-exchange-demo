@@ -88,11 +88,17 @@ Adresse: `http://127.0.0.1:8031/`. Daten liegen nur im Browserprofil. Der JSON-E
 
 ## RQ1-Teamintegration (lokal)
 
-Der "CMRS-Dateneingang" ruft für die Extraktion ausschließlich den echten RQ1-Server auf (separates Repository, LLM-first-Extraktion mit Ollama/Qwen 2.5 7B, Flask unter `http://localhost:5000`). Es gibt bewusst kein regelbasiertes Fallback: Ist der Server nicht erreichbar, erscheint eine Fehlermeldung statt eines unechten Ergebnisses. Der Rest der Anwendung (Marktplatz, Kettenplanung, FR7-Ranking) bleibt davon unabhängig und läuft weiterhin vollständig im Browser; nur der CMRS-Dateneingang benötigt den lokalen Server.
+Der "CMRS-Dateneingang" ruft für die Extraktion ausschließlich den echten RQ1-Server auf (LLM-first-Extraktion mit Ollama/Qwen 2.5 7B, Flask unter `http://localhost:5000`). Sein Quellcode liegt als Kopie in `rq1-server/` in diesem Repository (Details und Startanleitung: [`rq1-server/README.md`](rq1-server/README.md)), damit ein einzelner Klon dieses Repos ausreicht. Es gibt bewusst kein regelbasiertes Fallback: Ist der Server nicht erreichbar, erscheint eine Fehlermeldung statt eines unechten Ergebnisses. Der Rest der Anwendung (Marktplatz, Kettenplanung, FR7-Ranking) bleibt davon unabhängig und läuft weiterhin vollständig im Browser; nur der CMRS-Dateneingang benötigt den lokalen Server.
 
 Ergänzte Dateien: `src/domain/cmrs/client.ts` (Extraktion, Revalidierung, Kategorieprüfung gegen `/api/process_text`, `/api/validate_record`, `/api/check_category`), `src/domain/cmrs/prefill.ts` (Übergabe der ableitbaren Felder an Angebots-/Gesuchsformular), `src/domain/cmrs/messages.ts` (Fehlermeldungen mit Formular-Bezeichnung statt Schema-Pfad). Die CMRS-Record-Karte ist dadurch korrigierbar (Material, Kategorie, Menge, Slots) und revalidiert live gegen den echten Server; das Materialklasse-Feld in Angebot und Gesuch erlaubt eine KI-geprüfte Kategorieerweiterung (`+ Neue Kategorie vorschlagen…`), analog zum "Manuell erfassen"-Formular des RQ1-Servers.
 
-Voraussetzung: Der RQ1-Server läuft lokal (`python app.py`) mit erreichbarem Ollama. Läuft er nicht, bleiben alle anderen Seiten (Marktplatz, Angebot, Gesuch, Kettenplanung) unverändert nutzbar, nur der CMRS-Dateneingang zeigt eine Fehlermeldung an.
+Alles zusammen starten (Frontend + RQ1-Server):
+
+```sh
+docker compose up --build
+```
+
+Ohne Docker: `rq1-server/README.md` folgen (venv, `pip install -r requirements.txt`, `python app.py`) und parallel `npm run dev -- --host 127.0.0.1 --port 8031` in diesem Ordner. Läuft der Server nicht, bleiben alle anderen Seiten (Marktplatz, Angebot, Gesuch, Kettenplanung) unverändert nutzbar, nur der CMRS-Dateneingang zeigt eine Fehlermeldung an.
 
 ## Build
 
